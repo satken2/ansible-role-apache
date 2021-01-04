@@ -1,6 +1,6 @@
-# Ansible Role: Apache 2.x (オフラインインストール用)
+# Ansible Role: Apache 2.x (オフライン用)
 
-Forked from [geerlingguy/ansible-role-apache](https://github.com/geerlingguy/ansible-role-apache)
+Forked from [geerlingguy/ansible-role-apache](https://github.com/geerlingguy/ansible-role-apache)<br>
 Edited by Sato Kenta
 
 RHEL/CentOS, Debian/Ubuntu, SLES and Solarisで使用できるApache 2.xのAnsible Roleです。
@@ -49,9 +49,10 @@ Debian/Ubuntuではデフォルトのvirtualhostが最初からApacheのコン�
       - servername: "local.dev"
         documentroot: "/var/www/html"
 
-Add a set of properties per virtualhost, including `servername` (required), `documentroot` (required), `allow_override` (optional: defaults to the value of `apache_allow_override`), `options` (optional: defaults to the value of `apache_options`), `serveradmin` (optional), `serveralias` (optional) and `extra_parameters` (optional: you can add whatever additional configuration lines you'd like in here).
+このように、vhostsに設定したいプロパティを記載します。設定できる値は`servername`(必須)、` documentroot`(必須)、 `allow_override`(オプション：デフォルトは` apache_allow_override`)、 `options`(オプション：デフォルトは`apache_options`)、` serveradmin`(オプション)、 `serveralias`(オプション)、`extra_parameters`(オプション：ここに必要な構成行を追加できます)です。<br>
+複数のvhostを設定する場合はYAMLのリスト書式で追記してください。
 
-Here's an example using `extra_parameters` to add a RewriteRule to redirect all requests to the `www.` site:
+別の例として、`extra_parameters`を使用してRewriteRuleを追加し、すべてのリクエストを` www.`サイトにリダイレクトする例を示します。
 
       - servername: "www.local.dev"
         serveralias: "local.dev"
@@ -60,11 +61,12 @@ Here's an example using `extra_parameters` to add a RewriteRule to redirect all 
           RewriteCond %{HTTP_HOST} !^www\. [NC]
           RewriteRule ^(.*)$ http://www.%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
 
-The `|` denotes a multiline scalar block in YAML, so newlines are preserved in the resulting configuration file output.
+
+`|`はYAMLにおいて複数行のスカラーブロックを示す書式であり、ここに記載した改行文字は生成される構成ファイルに反映されます。
 
     apache_vhosts_ssl: []
 
-No SSL vhosts are configured by default, but you can add them using the same pattern as `apache_vhosts`, with a few additional directives, like the following example:
+デフォルトではSSLvhostは設定されていませんが、以下の例のようにいくつかの追加のディレクティブを使用して、 `apache_vhosts`と同様にSSLvhostをYAMLのリスト形式で追加できます。
 
     apache_vhosts_ssl:
       - servername: "local.dev"
@@ -76,41 +78,41 @@ No SSL vhosts are configured by default, but you can add them using the same pat
           RewriteCond %{HTTP_HOST} !^www\. [NC]
           RewriteRule ^(.*)$ http://www.%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
 
-Other SSL directives can be managed with other SSL-related role variables.
+他のSSLディレクティブは、他のSSL関連の変数で設定できます。
 
     apache_ssl_protocol: "All -SSLv2 -SSLv3"
     apache_ssl_cipher_suite: "AES256+EECDH:AES256+EDH"
 
-The SSL protocols and cipher suites that are used/allowed when clients make secure connections to your server. These are secure/sane defaults, but for maximum security, performand, and/or compatibility, you may need to adjust these settings.
+クライアントがサーバーに安全に接続するときに使用/許可されるSSLプロトコルと暗号化方式を設定します。これらの設定はデフォルトの状態で十分なセキュリティが担保されますが、セキュリティ、パフォーマンス、互換性でチューニングが必要な場合はこれらの設定を変更することができます。
 
     apache_allow_override: "All"
     apache_options: "-Indexes +FollowSymLinks"
 
-The default values for the `AllowOverride` and `Options` directives for the `documentroot` directory of each vhost.  A vhost can overwrite these values by specifying `allow_override` or `options`.
+各仮想ホストの `documentroot`ディレクトリの` AllowOverride`および `Options`ディレクティブのデフォルト値。仮想ホストは、 `allow_override`または` options`を指定することにより、これらの値を上書きできます。
 
     apache_mods_enabled:
       - rewrite.load
       - ssl.load
     apache_mods_disabled: []
 
-(Debian/Ubuntu ONLY) Which Apache mods to enable or disable (these will be symlinked into the appropriate location). See the `mods-available` directory inside the apache configuration directory (`/etc/apache2/mods-available` by default) for all the available mods.
+(Debian / Ubuntuのみ)どのApache modを有効または無効にするか(これらの設定値を元に適切な場所にシンボリックリンクが作成されます)。使用可能なすべてのmodについては、apache構成ディレクトリ内の`mods-available`ディレクトリ(デフォルトでは`/etc/apache2/mods-available`)を参照してください。
 
     apache_packages:
       - [platform-specific]
 
-The list of packages to be installed. This defaults to a set of platform-specific packages for RedHat or Debian-based systems (see `vars/RedHat.yml` and `vars/Debian.yml` for the default values).
+インストールするApacheパッケージのリストです。これは、デフォルトでRedHatまたはDebianベースのシステム用のプラットフォーム固有のパッケージのセットになります。(デフォルト値については、`vars/RedHat.yml`および`vars/Debian.yml`を参照)。
 
     apache_state: started
 
-Set initial Apache daemon state to be enforced when this role is run. This should generally remain `started`, but you can set it to `stopped` if you need to fix the Apache config during a playbook run or otherwise would not like Apache started at the time this role is run.
+このロールの実行時に適用されるApacheデーモンの初期状態を設定します。特に要件がない場合`started`に設定してください。ただし、Playbookの実行中にApache設定を修正する必要がある場合や、このロールの実行後に何らかの理由でApacheを開始したくない場合は、`stopped`に設定することもできます。
 
     apache_packages_state: present
 
-If you have enabled any additional repositories such as _ondrej/apache2_, [geerlingguy.repo-epel](https://github.com/geerlingguy/ansible-role-repo-epel), or [geerlingguy.repo-remi](https://github.com/geerlingguy/ansible-role-repo-remi), you may want an easy way to upgrade versions. You can set this to `latest` (combined with `apache_enablerepo` on RHEL) and can directly upgrade to a different Apache version from a different repo (instead of uninstalling and reinstalling Apache).
+*ondrej/apache2*などの追加レポジトリを有効にしている場合、この設定を`latest`に設定することで、別のレポジトリからでも直接Apacheを最新状態にアップグレードすることができます。
 
     apache_ignore_missing_ssl_certificate: true
 
-If you would like to only create SSL vhosts when the vhost certificate is present (e.g. when using Let’s Encrypt), set `apache_ignore_missing_ssl_certificate` to `false`. When doing this, you might need to run your playbook more than once so all the vhosts are configured (if another part of the playbook generates the SSL certificates).
+vhost証明書が存在する場合にのみSSLvhostを作成する場合(Let’s Encryptを使用する場合など)は、 `apache_ignore_missing_ssl_certificate`を` false`に設定します。この設定を行うときは、すべてのvhostが正しく設定されるように、Playbookを複数回実行する必要がある場合があります。
 
 ## .htaccessを使用したBasic認証の設定について
 
