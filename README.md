@@ -14,7 +14,9 @@ PHPを使用する場合、別途``等のロールを使用してPHPをインス
 
 ## 設定可能な変数について
 
-使用可能な変数とそのデフォルト値を以下のように記載します。(デフォルト値は`defaults/main.yml`を参照)
+使用可能な変数とそのデフォルト値を以下に記載します。(`defaults/main.yml`を参照)
+
+### 基本設定
 
     apache_enablerepo: ""
 
@@ -25,6 +27,12 @@ PHPを使用する場合、別途``等のロールを使用してPHPをインス
     apache_listen_port_ssl: 443
 
 上記はApacheがリッスンするIPアドレスとポートを指定します。リバースプロキシなどを使用して別のサービスから通信を受ける場合はこれを変更してください。
+
+    apache_state: started
+
+このロールの実行時に適用されるApacheデーモンの初期状態を設定します。特に要件がない場合`started`に設定してください。ただし、Playbookの実行中にApache設定を修正する必要がある場合や、このロールの実行後に何らかの理由でApacheを開始したくない場合は、`stopped`に設定することもできます。
+
+### 仮想ホストの設定
 
     apache_create_vhosts: true
     apache_vhosts_filename: "vhosts.conf"
@@ -80,6 +88,8 @@ Debian/Ubuntuではデフォルトのvirtualhostが最初からApacheのコン�
 
 他のSSLディレクティブは、他のSSL関連の変数で設定できます。
 
+### SSL関連設定
+
     apache_ssl_protocol: "All -SSLv2 -SSLv3"
     apache_ssl_cipher_suite: "AES256+EECDH:AES256+EDH"
 
@@ -89,6 +99,12 @@ Debian/Ubuntuではデフォルトのvirtualhostが最初からApacheのコン�
     apache_options: "-Indexes +FollowSymLinks"
 
 各仮想ホストの `documentroot`ディレクトリの` AllowOverride`および `Options`ディレクティブのデフォルト値。仮想ホストは、 `allow_override`または` options`を指定することにより、これらの値を上書きできます。
+
+    apache_ignore_missing_ssl_certificate: true
+
+vhost証明書が存在する場合にのみSSLvhostを作成する場合(Let’s Encryptを使用する場合など)は、 `apache_ignore_missing_ssl_certificate`を` false`に設定します。この設定を行うときは、すべてのvhostが正しく設定されるように、Playbookを複数回実行する必要がある場合があります。
+
+### Mod関連設定
 
     apache_mods_enabled:
       - rewrite.load
@@ -102,17 +118,20 @@ Debian/Ubuntuではデフォルトのvirtualhostが最初からApacheのコン�
 
 インストールするApacheパッケージのリストです。これは、デフォルトでRedHatまたはDebianベースのシステム用のプラットフォーム固有のパッケージのセットになります。(デフォルト値については、`vars/RedHat.yml`および`vars/Debian.yml`を参照)。
 
-    apache_state: started
-
-このロールの実行時に適用されるApacheデーモンの初期状態を設定します。特に要件がない場合`started`に設定してください。ただし、Playbookの実行中にApache設定を修正する必要がある場合や、このロールの実行後に何らかの理由でApacheを開始したくない場合は、`stopped`に設定することもできます。
-
     apache_packages_state: present
 
 *ondrej/apache2*などの追加レポジトリを有効にしている場合、この設定を`latest`に設定することで、別のレポジトリからでも直接Apacheを最新状態にアップグレードすることができます。
 
-    apache_ignore_missing_ssl_certificate: true
+### パフォーマンス設定
 
-vhost証明書が存在する場合にのみSSLvhostを作成する場合(Let’s Encryptを使用する場合など)は、 `apache_ignore_missing_ssl_certificate`を` false`に設定します。この設定を行うときは、すべてのvhostが正しく設定されるように、Playbookを複数回実行する必要がある場合があります。
+    apache_start_servers: 3
+    apache_server_limit: 200
+    apache_min_spare_servers: 3
+    apache_max_spare_servers: 5
+    apache_max_request_workers: 175
+    apache_max_connection_per_child: 100
+    apache_max_request_per_child: 20
+
 
 ## .htaccessを使用したBasic認証の設定について
 
