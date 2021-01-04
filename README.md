@@ -1,44 +1,48 @@
-# Ansible Role: Apache 2.x
+# Ansible Role: Apache 2.x (オフラインインストール用)
 
-[![CI](https://github.com/geerlingguy/ansible-role-apache/workflows/CI/badge.svg?event=push)](https://github.com/geerlingguy/ansible-role-apache/actions?query=workflow%3ACI)
+Forked from [geerlingguy/ansible-role-apache](https://github.com/geerlingguy/ansible-role-apache)
+Edited by Sato Kenta
 
-An Ansible Role that installs Apache 2.x on RHEL/CentOS, Debian/Ubuntu, SLES and Solaris.
+RHEL/CentOS, Debian/Ubuntu, SLES and Solarisで使用できるApache 2.xのAnsible Roleです。
+このロールは、インターネットに接続できない閉域ネットワークでの実行用にカスタマイズされています。
 
-## Requirements
+## 前提事項など
 
-If you are using SSL/TLS, you will need to provide your own certificate and key files. You can generate a self-signed certificate with a command like `openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout example.key -out example.crt`.
+SSL/TLSを使用する場合, 証明書ファイルを別途準備する必要があります。`openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout example.key -out example.crt`のようなコマンドを使用して自己証明書を作成するこも可能です。
 
-If you are using Apache with PHP, I recommend using the `geerlingguy.php` role to install PHP, and you can either use mod_php (by adding the proper package, e.g. `libapache2-mod-php5` for Ubuntu, to `php_packages`), or by also using `geerlingguy.apache-php-fpm` to connect Apache to PHP via FPM. See that role's README for more info.
+PHPを使用する場合、別途``等のロールを使用してPHPをインストールするか、PHPがバンドルされたApacheのロールを使用してください。
 
-## Role Variables
+## 設定可能な変数について
 
-Available variables are listed below, along with default values (see `defaults/main.yml`):
+使用可能な変数とそのデフォルト値を以下のように記載します。(デフォルト値は`defaults/main.yml`を参照)
 
     apache_enablerepo: ""
 
-The repository to use when installing Apache (only used on RHEL/CentOS systems). If you'd like later versions of Apache than are available in the OS's core repositories, use a repository like EPEL (which can be installed with the `geerlingguy.repo-epel` role).
+上記はApacheをインストールする際に使用するレポジトリを指定します (RHEL/CentOS系OSの場合のみ). OSで提供されているレポジトリより新しいバージョンを使用する場合はEPELなどを使用してください。 (`geerlingguy.repo-epel`ロールでインストールできます).
 
     apache_listen_ip: "*"
     apache_listen_port: 80
     apache_listen_port_ssl: 443
 
-The IP address and ports on which apache should be listening. Useful if you have another service (like a reverse proxy) listening on port 80 or 443 and need to change the defaults.
+上記はApacheがリッスンするIPアドレスとポートを指定します。リバースプロキシなどを使用して別のサービスから通信を受ける場合はこれを変更してください。
 
     apache_create_vhosts: true
     apache_vhosts_filename: "vhosts.conf"
     apache_vhosts_template: "vhosts.conf.j2"
 
-If set to true, a vhosts file, managed by this role's variables (see below), will be created and placed in the Apache configuration folder. If set to false, you can place your own vhosts file into Apache's configuration folder and skip the convenient (but more basic) one added by this role. You can also override the template used and set a path to your own template, if you need to further customize the layout of your VirtualHosts.
+Trueに設定した場合、ロールでvhostsファイルを生成(後述)し、Apacheのコンフィグフォルダに配置することができます。Falseに設定し、自分でvhosts定義ファイルを作成してコンフィグフォルダに配置することもできます。
+You can also override the template used and set a path to your own template, if you need to further customize the layout of your VirtualHosts.
 
     apache_remove_default_vhost: false
 
-On Debian/Ubuntu, a default virtualhost is included in Apache's configuration. Set this to `true` to remove that default virtualhost configuration file.
+Debian/Ubuntuではデフォルトのvirtualhostが最初からApacheのコンフィグに含まれていますが、このパラメータを`true`に設定すればその設定を削除することができます。
+
 
     apache_global_vhost_settings: |
       DirectoryIndex index.php index.html
       # Add other global settings on subsequent lines.
 
-You can add or override global Apache configuration settings in the role-provided vhosts file (assuming `apache_create_vhosts` is true) using this variable. By default it only sets the DirectoryIndex configuration.
+`apache_create_vhosts`がTrueの場合でも、この変数を使用することでRoleが生成するvhostsファイルを上書きすることができます。デフォルトでは、単にDirectoryIndexの設定だけを行います。
 
     apache_vhosts:
       # Additional optional properties: 'serveradmin, serveralias, extra_parameters'.
@@ -108,9 +112,9 @@ If you have enabled any additional repositories such as _ondrej/apache2_, [geerl
 
 If you would like to only create SSL vhosts when the vhost certificate is present (e.g. when using Let’s Encrypt), set `apache_ignore_missing_ssl_certificate` to `false`. When doing this, you might need to run your playbook more than once so all the vhosts are configured (if another part of the playbook generates the SSL certificates).
 
-## .htaccess-based Basic Authorization
+## .htaccessを使用したBasic認証の設定について
 
-If you require Basic Auth support, you can add it either through a custom template, or by adding `extra_parameters` to a VirtualHost configuration, like so:
+Basic認証を設定する場合、Basin認証の設定を含むコンフィグのテンプレートを作成するか、あるいは`extra_parameters`応用することで実現できます。以下に例を示します。
 
     extra_parameters: |
       <Directory "/var/www/password-protected-directory">
@@ -120,20 +124,20 @@ If you require Basic Auth support, you can add it either through a custom templa
         AuthUserFile /var/www/password-protected-directory/.htpasswd
       </Directory>
 
-To password protect everything within a VirtualHost directive, use the `Location` block instead of `Directory`:
+VirtualHostディレクティブ配下の全てをパスワードで保護したい場合、`Directory`ブロックの代わりに`Location`ブロックを使用して以下のようにします。
 
     <Location "/">
       Require valid-user
       ....
     </Location>
 
-You would need to generate/upload your own `.htpasswd` file in your own playbook. There may be other roles that support this functionality in a more integrated way.
+この場合、別途`.htpasswd`ファイルを作成してPlaybookに含める必要があります。
 
-## Dependencies
+## 依存Role
 
-None.
+なし
 
-## Example Playbook
+## Playbook例
 
     - hosts: webservers
       vars_files:
@@ -141,16 +145,12 @@ None.
       roles:
         - { role: geerlingguy.apache }
 
-*Inside `vars/main.yml`*:
+*`vars/main.yml`の設定例*:
 
     apache_listen_port: 8080
     apache_vhosts:
       - {servername: "example.com", documentroot: "/var/www/vhosts/example_com"}
 
-## License
+## ライセンス
 
 MIT / BSD
-
-## Author Information
-
-This role was created in 2014 by [Jeff Geerling](https://www.jeffgeerling.com/), author of [Ansible for DevOps](https://www.ansiblefordevops.com/).
